@@ -1,0 +1,67 @@
+.cell {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.cell:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cell.initial {
+  color: #fff;
+  font-weight: 700;
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.cell.selected {
+  background: rgba(99, 102, 241, 0.4) !important;
+  box-shadow: inset 0 0 0 2px #6366f1;
+}
+
+.cell.highlighted {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.cell.same-number {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.cell.conflict {
+  background: rgba(239, 68, 68, 0.3) !important;
+  color: #f87171 !important;
+  animation: shake 0.3s ease;
+}
+
+.cell.border-right {
+  border-right: 2px solid rgba(99, 102, 241, 0.5);
+}
+
+.cell.border-bottom {
+  border-bottom: 2px solid rgba(99, 102, 241, 0.5);
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+@media (max-width: 500px) {
+  .cell {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+  }
+}
