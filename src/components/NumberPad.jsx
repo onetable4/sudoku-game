@@ -1,6 +1,6 @@
 import './NumberPad.css';
 
-function NumberPad({ onNumberSelect, onErase, isNotesMode, onToggleNotesMode, disabled }) {
+function NumberPad({ onNumberSelect, onErase, isNotesMode, onToggleNotesMode, disabled, remainingCounts, showRemainingCount }) {
     const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
     return (
@@ -34,11 +34,14 @@ function NumberPad({ onNumberSelect, onErase, isNotesMode, onToggleNotesMode, di
                 {numbers.map(num => (
                     <button
                         key={num}
-                        className={`number-btn ${isNotesMode ? 'notes-mode' : ''}`}
+                        className={`number-btn ${isNotesMode ? 'notes-mode' : ''} ${remainingCounts[num] === 0 ? 'completed' : ''}`}
                         onClick={() => onNumberSelect(num)}
-                        disabled={disabled}
+                        disabled={disabled || remainingCounts[num] === 0}
                     >
-                        {num}
+                        <span className="number-value">{num}</span>
+                        {showRemainingCount && (
+                            <span className="remaining-count">{remainingCounts[num]}</span>
+                        )}
                     </button>
                 ))}
             </div>

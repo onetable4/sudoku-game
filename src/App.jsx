@@ -3,6 +3,7 @@ import Board from './components/Board';
 import NumberPad from './components/NumberPad';
 import GameControls from './components/GameControls';
 import WinModal from './components/WinModal';
+import SettingsPanel from './components/SettingsPanel';
 import { generatePuzzle, checkWin, findConflicts } from './utils/sudoku';
 import './App.css';
 
@@ -11,6 +12,79 @@ function createEmptyNotes() {
   return Array(9).fill(null).map(() =>
     Array(9).fill(null).map(() => new Set())
   );
+}
+
+// Load settings from localStorage
+function loadSettings() {
+  try {
+    const saved = localStorage.getItem('sudoku-settings');
+    return saved ? JSON.parse(saved) : { autoEliminateNotes: true, showRemainingCount: true };
+  } catch {
+    return { autoEliminateNotes: true, showRemainingCount: true };
+  }
+}
+
+// Load high scores from localStorage
+function loadHighScores() {
+  try {
+    const saved = localStorage.getItem('sudoku-highscores');
+    return saved ? JSON.parse(saved) : { easy: null, medium: null, hard: null, expert: null };
+  } catch {
+    return { easy: null, medium: null, hard: null, expert: null };
+  }
+}
+
+// Save high scores to localStorage
+function saveHighScores(scores) {
+  localStorage.setItem('sudoku-highscores', JSON.stringify(scores));
+}
+
+// Save settings to localStorage
+function saveSettings(settings) {
+  localStorage.setItem('sudoku-settings', JSON.stringify(settings));
+}
+
+// Count remaining numbers (9 - already placed count for each number)
+function countRemainingNumbers(grid) {
+  const counts = {};
+  for (let i = 1; i <= 9; i++) {
+    counts[i] = 9;
+  }
+  for (let row = 0; row < 9; row++) {
+    for (let col = 0; col < 9; col++) {
+      const num = grid[row][col];
+      if (num !== 0) {
+        counts[num]--;
+      }
+    }
+  }
+  return counts;
+}
+
+// Remove a number from notes in the same row, column, and box
+function eliminateNotesForNumber(notes, row, col, num) {
+  const newNotes = notes.map(r => r.map(c => new Set(c)));
+
+  // Eliminate from row
+  for (let x = 0; x < 9; x++) {
+    newNotes[row][x].delete(num);
+  }
+
+  // Eliminate from column
+  for (let x = 0; x < 9; x++) {
+    newNotes[x][col].delete(num);
+  }
+
+  // Eliminate from 3x3 box
+  const boxRow = Math.floor(row / 3) * 3;
+  const boxCol = Math.floor(col / 3) * 3;
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      newNotes[boxRow + i][boxCol + j].delete(num);
+    }
+  }
+
+  return newNotes;
 }
 
 function App() {
@@ -24,6 +98,9 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasWon, setHasWon] = useState(false);
   const [isNotesMode, setIsNotesMode] = useState(false);
+  const [settings, setSettings] = useState(loadSettings);
+  const [highScores, setHighScores] = useState(loadHighScores);
+  const [isNewHighScore, setIsNewHighScore] = useState(false);
 
   const startNewGame = useCallback((diff = difficulty) => {
     const { puzzle } = generatePuzzle(diff);
@@ -36,6 +113,7 @@ function App() {
     setIsPlaying(true);
     setHasWon(false);
     setIsNotesMode(false);
+    setIsNewHighScore(false);
   }, [difficulty]);
 
   useEffect(() => {
@@ -88,9 +166,13 @@ function App() {
       newGrid[row][col] = num;
       setGrid(newGrid);
 
-      // Clear notes when entering a value
-      const newNotes = notes.map(r => r.map(c => new Set(c)));
+      // Clear notes when entering a value & auto-eliminate if enabled
+      let newNotes = notes.map(r => r.map(c => new Set(c)));
       newNotes[row][col].clear();
+
+      if (settings.autoEliminateNotes) {
+        newNotes = eliminateNotesForNumber(newNotes, row, col, num);
+      }
       setNotes(newNotes);
 
       // Check for conflicts
@@ -101,6 +183,15 @@ function App() {
       if (checkWin(newGrid)) {
         setHasWon(true);
         setIsPlaying(false);
+
+        // Check and update high score
+        const currentHighScore = highScores[difficulty];
+        if (currentHighScore === null || time < currentHighScore) {
+          const newHighScores = { ...highScores, [difficulty]: time };
+          setHighScores(newHighScores);
+          saveHighScores(newHighScores);
+          setIsNewHighScore(true);
+        }
       }
     }
   };
@@ -135,6 +226,12 @@ function App() {
     setIsNotesMode(mode);
   };
 
+  const handleSettingsChange = (key, value) => {
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    saveSettings(newSettings);
+  };
+
   const handleKeyDown = useCallback((e) => {
     if (!selectedCell) return;
 
@@ -154,16 +251,19 @@ function App() {
     } else if (e.key === 'n' || e.key === 'N') {
       setIsNotesMode(prev => !prev);
     }
-  }, [selectedCell, grid, notes, initialGrid, isNotesMode]);
+  }, [selectedCell, grid, notes, initialGrid, isNotesMode, settings]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+
   if (grid.length === 0) {
     return <div className="loading">로딩 중...</div>;
   }
+
+  const remainingCounts = countRemainingNumbers(grid);
 
   return (
     <div className="app">
@@ -181,6 +281,7 @@ function App() {
           onDifficultyChange={handleDifficultyChange}
           onNewGame={() => startNewGame()}
           time={time}
+          highScore={highScores[difficulty]}
         />
 
         <Board
@@ -198,6 +299,13 @@ function App() {
           isNotesMode={isNotesMode}
           onToggleNotesMode={handleToggleNotesMode}
           disabled={!selectedCell || (selectedCell && initialGrid[selectedCell.row][selectedCell.col] !== 0)}
+          remainingCounts={remainingCounts}
+          showRemainingCount={settings.showRemainingCount}
+        />
+
+        <SettingsPanel
+          settings={settings}
+          onSettingsChange={handleSettingsChange}
         />
 
         <div className="instructions">
@@ -208,6 +316,9 @@ function App() {
       {hasWon && (
         <WinModal
           time={time}
+          difficulty={difficulty}
+          isNewHighScore={isNewHighScore}
+          highScore={highScores[difficulty]}
           onNewGame={() => startNewGame()}
           onClose={() => setHasWon(false)}
         />

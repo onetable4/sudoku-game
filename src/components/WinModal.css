@@ -83,7 +83,46 @@
     color: #a78bfa;
     font-size: 1.2rem;
     font-weight: 600;
-    margin: 0 0 24px;
+    margin: 0 0 16px;
+}
+
+.new-record-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #1e1b4b;
+    padding: 10px 20px;
+    border-radius: 24px;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 16px;
+    animation: pulse 1s ease infinite;
+}
+
+.new-record-badge svg {
+    width: 20px;
+    height: 20px;
+    fill: #1e1b4b;
+    stroke: none;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.high-score-info {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.95rem;
+    margin: 0 0 16px;
 }
 
 .play-again-btn {
