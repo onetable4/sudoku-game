@@ -3,6 +3,7 @@ import './Board.css';
 
 function Board({
     grid,
+    notes,
     initialGrid,
     selectedCell,
     conflicts,
@@ -30,6 +31,7 @@ function Board({
                             <Cell
                                 key={`${rowIndex}-${colIndex}`}
                                 value={value}
+                                notes={notes[rowIndex][colIndex]}
                                 isInitial={initialGrid[rowIndex][colIndex] !== 0}
                                 isSelected={isSelected}
                                 isHighlighted={isHighlighted && !isSelected}
